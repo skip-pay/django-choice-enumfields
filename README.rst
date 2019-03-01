@@ -14,8 +14,8 @@ Included Tools
 --------------
 
 
-EnumField, EnumIntegerField
-```````````````````````````
+EnumField, NumEnumField
+```````````````````````
 
 .. code-block:: python
 
@@ -37,7 +37,7 @@ Elsewhere:
 
     m = MyModel.objects.filter(color=Color.RED)
 
-``EnumIntegerField`` works identically, but the underlying storage mechanism is
+``NumEnumField`` works identically, but the underlying storage mechanism is
 an ``IntegerField`` instead of a ``CharField``.
 
 
@@ -59,19 +59,16 @@ Normally, you just use normal PEP435_-style enums, however, django-enumfields
 also encludes its own version of Enum with a few extra bells and whistles.
 Namely, the smart definition of labels which are used, for example, in admin
 dropdowns. By default, it will create labels by title-casing your constant
-names. You can provide custom labels with a nested "Labels" class.
+names. You can provide custom labels with using Choice to define enum item.
 
 .. code-block:: python
 
     from enumfields import EnumField, Enum  # Our own Enum class
 
     class Color(Enum):
-        RED = 'r'
+        RED = Choice('r', 'A custom label')
         GREEN = 'g'
         BLUE = 'b'
-
-        class Labels:
-            RED = 'A custom label'
 
     class MyModel(models.Model):
         color = EnumField(Color, max_length=1)

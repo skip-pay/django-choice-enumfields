@@ -8,7 +8,7 @@ try:
 except ImportError:
     from django.urls import reverse  # Django 2.x
 
-from enumfields import EnumIntegerField
+from enumfields import NumEnumField
 
 from .enums import Color, IntegerEnum, Taste, ZeroEnum
 from .models import MyModel
@@ -34,7 +34,7 @@ def test_model_admin_post(admin_client):
     assert b"Select a valid choice" not in text
     try:
         inst = MyModel.objects.get(random_code=secret_uuid)
-    except DoesNotExist:
+    except MyModel.DoesNotExist:
         assert False, "Object wasn't created in the database"
     assert inst.color == Color.RED, "Redness not assured"
     assert inst.taste == Taste.UMAMI, "Umami not there"
@@ -77,6 +77,6 @@ def test_model_admin_filter(admin_client, q_color, q_taste, q_int_enum):
 
 
 def test_django_admin_lookup_value_for_integer_enum_field():
-    field = EnumIntegerField(Taste)
+    field = NumEnumField(Taste)
 
     assert field.get_prep_value(str(Taste.BITTER)) == 3, "get_prep_value should be able to convert from strings"

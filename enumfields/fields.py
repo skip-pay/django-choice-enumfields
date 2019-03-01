@@ -11,7 +11,7 @@ from django.utils.module_loading import import_string
 from .forms import EnumChoiceField
 
 
-class CastOnAssignDescriptor(object):
+class CastOnAssignDescriptor:
     """
     A property descriptor which ensures that `field.to_python()` is called on _every_ assignment to the field.
 
@@ -31,7 +31,7 @@ class CastOnAssignDescriptor(object):
         obj.__dict__[self.field.name] = self.field.to_python(value)
 
 
-class EnumFieldMixin(object):
+class EnumFieldMixin:
     def __init__(self, enum, **options):
         if isinstance(enum, six.string_types):
             self.enum = import_string(enum)
@@ -134,15 +134,14 @@ class EnumField(EnumFieldMixin, models.CharField):
         self.validators = []
 
 
-class EnumIntegerField(EnumFieldMixin, models.IntegerField):
+class NumEnumField(EnumFieldMixin, models.IntegerField):
     @cached_property
     def validators(self):
         # Skip IntegerField validators, since they will fail with
         #   TypeError: unorderable types: TheEnum() < int()
         # when used database reports min_value or max_value from
         # connection.ops.integer_field_range method.
-        next = super(models.IntegerField, self)
-        return next.validators
+        return super(models.IntegerField, self).validators
 
     def get_prep_value(self, value):
         if value is None:

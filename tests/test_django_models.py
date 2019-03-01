@@ -1,7 +1,5 @@
 # -- encoding: UTF-8 --
 
-from enum import IntEnum
-
 import pytest
 from django.db import connection
 

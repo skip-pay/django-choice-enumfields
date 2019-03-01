@@ -12,7 +12,7 @@ class Choice:
             setattr(self, k, v)
 
 
-class EnumMeta(BaseEnumMeta):
+class ChoiceEnumMeta(BaseEnumMeta):
 
     def __new__(mcs, name, bases, attrs):
         member_names = attrs._member_names
@@ -25,6 +25,7 @@ class EnumMeta(BaseEnumMeta):
         for name in member_names:
             attrs.pop(name)
             attrs[name] = choices[name].value
+        attrs._member_names = member_names
 
         obj = BaseEnumMeta.__new__(mcs, name, bases, attrs)
         for name, choice in choices.items():
@@ -36,7 +37,7 @@ class EnumMeta(BaseEnumMeta):
         return obj
 
 
-class Enum(EnumMeta('Enum', (BaseEnum,), _EnumDict())):
+class ChoiceEnum(ChoiceEnumMeta('ChoiceEnum', (BaseEnum,), _EnumDict())):
 
     @classmethod
     def choices(cls):
@@ -53,7 +54,7 @@ class Enum(EnumMeta('Enum', (BaseEnum,), _EnumDict())):
         return str(self.label)
 
 
-class NumEnum(int, Enum):
+class NumChoiceEnum(int, ChoiceEnum):
 
     def __str__(self):  # See Enum.__str__
         return str(self.label)

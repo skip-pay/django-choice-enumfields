@@ -20,9 +20,9 @@ EnumField, NumEnumField
 .. code-block:: python
 
     from enumfields import EnumField
-    from enumfields import Enum  # Uses Ethan Furman's "enum34" backport
+    from enumfields import ChoiceEnum  # Uses Ethan Furman's "enum34" backport
 
-    class Color(Enum):
+    class Color(ChoiceEnum):
         RED = 'r'
         GREEN = 'g'
         BLUE = 'b'
@@ -41,6 +41,34 @@ Elsewhere:
 an ``IntegerField`` instead of a ``CharField``.
 
 
+EnumSubField, NumEnumSubField
+`````````````````````````````
+
+.. code-block:: python
+
+    from enumfields import EnumField, EnumSubField
+    from enumfields import ChoiceEnum
+
+    class Color(ChoiceEnum):
+        RED = 'r'
+        GREEN = 'g'
+        BLUE = 'b'
+
+    class ColorType(ChoiceEnum):
+        LIGHT = Choice('l', 'light', parents=(Color.RED, Color.BLUE))
+        DARK = Choice('d', 'dard', parents=(Color.RED, Color.GREEN))
+        TRANSPARENT = Choice('t', 'transparent', parents=(Color.GREEN))
+
+    class MyModel(models.Model):
+
+        color = EnumField(Color, max_length=1)
+        color_type = EnumSubField('color', ColorType, max_length=1)
+
+    MyModel(color=Color.RED, color_type=Color.LIGHT).full_clean()  # OK
+    MyModel(color=Color.RED, color_type=Color.TRANSPARENT).full_clean()  # Raise ValidationError
+
+``EnumSubField`` automatically validates if parents requirement is satisfied.
+
 Usage in Forms
 ~~~~~~~~~~~~~~
 
@@ -52,20 +80,20 @@ Call the ``formfield`` method to use an ``EnumField`` directly in a ``Form``.
 
         color = EnumField(Color, max_length=1).formfield()
 
-Enum
-````
+ChoiceEnum
+``````````
 
 Normally, you just use normal PEP435_-style enums, however, django-enumfields
-also encludes its own version of Enum with a few extra bells and whistles.
+also encludes its own version of ChoiceEnum with a few extra bells and whistles.
 Namely, the smart definition of labels which are used, for example, in admin
 dropdowns. By default, it will create labels by title-casing your constant
 names. You can provide custom labels with using Choice to define enum item.
 
 .. code-block:: python
 
-    from enumfields import EnumField, Enum  # Our own Enum class
+    from enumfields import EnumField, ChoiceEnum, Choice  # Our own Enum class
 
-    class Color(Enum):
+    class Color(ChoiceEnum):
         RED = Choice('r', 'A custom label')
         GREEN = 'g'
         BLUE = 'b'

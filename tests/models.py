@@ -1,8 +1,8 @@
 from django.db import models
 
-from enumfields import EnumField, NumEnumField
+from enumfields import EnumField, NumEnumField, NumEnumSubField
 
-from .enums import Color, IntegerEnum, LabeledEnum, Taste, ZeroEnum
+from .enums import Color, IntegerEnum, LabeledEnum, Taste, ZeroEnum, SubIntegerEnum
 
 
 class MyModel(models.Model):
@@ -18,6 +18,7 @@ class MyModel(models.Model):
 
     zero_field = NumEnumField(ZeroEnum, null=True, default=None, blank=True)
     int_enum = NumEnumField(IntegerEnum, null=True, default=None, blank=True)
+    sub_int_enum = NumEnumSubField('int_enum', SubIntegerEnum, null=True, default=None, blank=True)
 
     zero2 = NumEnumField(ZeroEnum, default=ZeroEnum.ZERO)
     labeled_enum = EnumField(LabeledEnum, blank=True, null=True)

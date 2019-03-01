@@ -48,7 +48,7 @@ def test_model_admin_post(admin_client):
 @pytest.mark.parametrize('q_int_enum', (None, IntegerEnum.A, IntegerEnum.B))
 def test_model_admin_filter(admin_client, q_color, q_taste, q_int_enum):
     """
-    Test that various combinations of Enum filters seem to do the right thing in the change list.
+    Test that various combinations of ChoiceEnum filters seem to do the right thing in the change list.
     """
 
     # Create a bunch of objects...

@@ -36,7 +36,7 @@ def test_bound_form_with_instance():
 def test_choices():
     form = get_form()
     assert form.base_fields["zero2"].choices == [(0, 'Zero'), (1, 'One')]
-    assert form.base_fields["int_enum"].choices == BLANK_CHOICE_DASH + [(0, 'foo'), (1, 'B')]
+    assert form.base_fields["int_enum"].choices == BLANK_CHOICE_DASH + [(0, 'foo'), (1, 'B'), (2, 'C')]
 
 
 def test_validation():

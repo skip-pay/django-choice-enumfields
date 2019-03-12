@@ -28,13 +28,13 @@ class PyTest(TestCommand):
 
 
 setup(
-    name='django-enumfields',
+    name='django-choice-enumfields',
     version='1.0.0',
-    author='HZDG',
-    author_email='webmaster@hzdg.com',
+    author='HZDG, Lubos Matl',
+    author_email='matllubos@gmail.com',
     description='Real Python Enums for Django.',
     license='MIT',
-    url='https://github.com/hzdg/django-enumfields',
+    url='https://github.com/druids/django-choice-enumfields',
     long_description=README,
     packages=find_packages(exclude=['tests*']),
     zip_safe=False,

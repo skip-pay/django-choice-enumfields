@@ -1,36 +1,44 @@
-import inspect
-
-from django.utils.encoding import force_text, python_2_unicode_compatible
-
-try:
-    from enum import Enum as BaseEnum
-    from enum import EnumMeta as BaseEnumMeta
-    from enum import _EnumDict
-except ImportError:  # pragma: no cover
-    raise ImportError('Missing the enum module. Please install enum34.')
+from enum import Enum as BaseEnum
+from enum import EnumMeta as BaseEnumMeta
+from enum import _EnumDict
 
 
-class EnumMeta(BaseEnumMeta):
+class Choice:
+
+    def __init__(self, value, label, **kwargs):
+        self.value = value
+        self.label = label
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+
+
+class ChoiceEnumMeta(BaseEnumMeta):
+
     def __new__(mcs, name, bases, attrs):
-        Labels = attrs.get('Labels')
-
-        if Labels is not None and inspect.isclass(Labels):
-            del attrs['Labels']
-            if hasattr(attrs, '_member_names'):
-                attrs._member_names.remove('Labels')
+        member_names = attrs._member_names
+        choices = {
+            name: attrs[name] if isinstance(attrs[name], Choice)
+            else Choice(attrs[name], name.replace('_', ' ').title())
+            for name in member_names
+        }
+        attrs._member_names = []
+        for name in member_names:
+            attrs.pop(name)
+            attrs[name] = choices[name].value
+        attrs._member_names = member_names
 
         obj = BaseEnumMeta.__new__(mcs, name, bases, attrs)
-        for m in obj:
-            try:
-                m.label = getattr(Labels, m.name)
-            except AttributeError:
-                m.label = m.name.replace('_', ' ').title()
+        for name, choice in choices.items():
+            m = obj[name]
+            for k, v in choice.__dict__.items():
+                if k != 'value':
+                    setattr(m, k, v)
 
         return obj
 
 
-@python_2_unicode_compatible
-class Enum(EnumMeta('Enum', (BaseEnum,), _EnumDict())):
+class ChoiceEnum(ChoiceEnumMeta('ChoiceEnum', (BaseEnum,), _EnumDict())):
+
     @classmethod
     def choices(cls):
         """
@@ -43,10 +51,10 @@ class Enum(EnumMeta('Enum', (BaseEnum,), _EnumDict())):
         """
         Show our label when Django uses the Enum for displaying in a view
         """
-        return force_text(self.label)
+        return str(self.label)
 
 
-@python_2_unicode_compatible
-class IntEnum(int, Enum):
+class NumChoiceEnum(int, ChoiceEnum):
+
     def __str__(self):  # See Enum.__str__
-        return force_text(self.label)
+        return str(self.label)

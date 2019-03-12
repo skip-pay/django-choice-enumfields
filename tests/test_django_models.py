@@ -1,11 +1,10 @@
 # -- encoding: UTF-8 --
 
-from enum import IntEnum
-
 import pytest
 from django.db import connection
+from django.core.exceptions import ValidationError
 
-from .enums import Color, IntegerEnum, LabeledEnum, Taste, ZeroEnum
+from .enums import Color, IntegerEnum, LabeledEnum, Taste, ZeroEnum, SubIntegerEnum
 from .models import MyModel
 
 
@@ -103,3 +102,13 @@ def test_nonunique_label():
 
     obj = MyModel.objects.get(pk=obj.pk)
     assert obj.labeled_enum is LabeledEnum.FOOBAR
+
+
+def test_sub_enum_field():
+    with pytest.raises(ValidationError):
+        MyModel(color=Color.RED, int_enum=IntegerEnum.A, sub_int_enum=SubIntegerEnum.D).full_clean()
+    MyModel(color=Color.RED, int_enum=IntegerEnum.C).full_clean()
+    MyModel(color=Color.RED, int_enum=IntegerEnum.A, sub_int_enum=SubIntegerEnum.C).full_clean()
+    MyModel(color=Color.RED, int_enum=IntegerEnum.B, sub_int_enum=SubIntegerEnum.C).full_clean()
+    MyModel(color=Color.RED, int_enum=IntegerEnum.B, sub_int_enum=SubIntegerEnum.D).full_clean()
+    MyModel(color=Color.RED).full_clean()

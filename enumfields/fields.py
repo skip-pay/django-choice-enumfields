@@ -1,17 +1,17 @@
 from enum import Enum
 
 import django
-from django.utils import six
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models.fields import BLANK_CHOICE_DASH
 from django.utils.functional import cached_property
 from django.utils.module_loading import import_string
+from django.utils.translation import ugettext
 
 from .forms import EnumChoiceField
 
 
-class CastOnAssignDescriptor(object):
+class CastOnAssignDescriptor:
     """
     A property descriptor which ensures that `field.to_python()` is called on _every_ assignment to the field.
 
@@ -31,15 +31,16 @@ class CastOnAssignDescriptor(object):
         obj.__dict__[self.field.name] = self.field.to_python(value)
 
 
-class EnumFieldMixin(object):
+class EnumFieldMixin:
+
     def __init__(self, enum, **options):
-        if isinstance(enum, six.string_types):
+        if isinstance(enum, str):
             self.enum = import_string(enum)
         else:
             self.enum = enum
 
-        if "choices" not in options:
-            options["choices"] = [  # choices for the TypedChoiceField
+        if 'choices' not in options:
+            options['choices'] = [  # choices for the TypedChoiceField
                 (i, getattr(i, 'label', i.name))
                 for i in self.enum
             ]
@@ -60,7 +61,7 @@ class EnumFieldMixin(object):
                 return m
             if value == m.value or str(value) == str(m.value) or str(value) == str(m):
                 return m
-        raise ValidationError('%s is not a valid value for enum %s' % (value, self.enum), code="invalid_enum_value")
+        raise ValidationError('%s is not a valid value for enum %s' % (value, self.enum), code='invalid_enum_value')
 
     def get_prep_value(self, value):
         if value is None:
@@ -98,12 +99,12 @@ class EnumFieldMixin(object):
         return super(EnumFieldMixin, self).get_default()
 
     def deconstruct(self):
-        name, path, args, kwargs = super(EnumFieldMixin, self).deconstruct()
+        name, path, args, kwargs = super().deconstruct()
         kwargs['enum'] = self.enum
         kwargs.pop('choices', None)
         if 'default' in kwargs:
-            if hasattr(kwargs["default"], "value"):
-                kwargs["default"] = kwargs["default"].value
+            if hasattr(kwargs['default'], 'value'):
+                kwargs['default'] = kwargs['default'].value
 
         return name, path, args, kwargs
 
@@ -128,21 +129,22 @@ class EnumFieldMixin(object):
 
 
 class EnumField(EnumFieldMixin, models.CharField):
+
     def __init__(self, enum, **kwargs):
-        kwargs.setdefault("max_length", 10)
+        kwargs.setdefault('max_length', 10)
         super(EnumField, self).__init__(enum, **kwargs)
         self.validators = []
 
 
-class EnumIntegerField(EnumFieldMixin, models.IntegerField):
+class NumEnumField(EnumFieldMixin, models.IntegerField):
+
     @cached_property
     def validators(self):
         # Skip IntegerField validators, since they will fail with
         #   TypeError: unorderable types: TheEnum() < int()
         # when used database reports min_value or max_value from
         # connection.ops.integer_field_range method.
-        next = super(models.IntegerField, self)
-        return next.validators
+        return super(models.IntegerField, self).validators
 
     def get_prep_value(self, value):
         if value is None:
@@ -155,3 +157,58 @@ class EnumIntegerField(EnumFieldMixin, models.IntegerField):
             return int(value)
         except ValueError:
             return self.to_python(value).value
+
+
+class EnumSubFieldMixin:
+
+    def __init__(self, parent_field_name, enum, **options):
+        self.parent_field_name = parent_field_name
+        super().__init__(enum, **options)
+
+    def _get_supvalue(self, model_instance):
+        return getattr(model_instance, self.parent_field_name)
+
+    def _get_all_parent_values(self):
+        parents = set()
+        for choice in self.enum:
+            parents |= set(choice.parents)
+        return parents
+
+    def _get_all_parent_choices(self, supvalue):
+        return {
+            choice for choice in self.enum if supvalue in choice.parents
+        }
+
+    def clean(self, value, model_instance):
+        if self._get_all_parent_choices(self._get_supvalue(model_instance)):
+            return super().clean(value, model_instance)
+        else:
+            return None
+
+    def _raise_error_if_value_should_be_empty(self, value, supvalue):
+        if supvalue not in self._get_all_parent_values() and value is not None:
+            raise ValidationError(ugettext('Value must be empty'))
+
+    def _raise_error_if_value_not_allowed(self, value, supvalue):
+        allowed_values = self._get_all_parent_choices(supvalue)
+        if allowed_values and value not in allowed_values:
+            raise ValidationError(ugettext('Allowed choices are {}.').format(
+                ', '.join(('{} ({})'.format(*(val.label, val)) for val in allowed_values))
+            ))
+
+    def validate(self, value, model_instance):
+        self._raise_error_if_value_should_be_empty(value, self._get_supvalue(model_instance))
+        self._raise_error_if_value_not_allowed(value, self._get_supvalue(model_instance))
+
+    def deconstruct(self):
+        name, path, args, kwargs = super().deconstruct()
+        kwargs['parent_field_name'] = self.parent_field_name
+        return name, path, args, kwargs
+
+
+class EnumSubField(EnumSubFieldMixin, EnumField):
+    pass
+
+
+class NumEnumSubField(EnumSubFieldMixin, NumEnumField):
+    pass

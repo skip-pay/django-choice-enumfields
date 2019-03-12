@@ -59,10 +59,8 @@ setup(
     tests_require=[
         'pytest-django',
         'Django',
-        'djangorestframework'
+        'djangorestframework',
+        'pytz',
     ],
-    extras_require={
-        ":python_version<'3.4'": ['enum34'],
-    },
     cmdclass={'test': PyTest},
 )

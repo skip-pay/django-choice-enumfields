@@ -3,22 +3,18 @@ from __future__ import unicode_literals
 
 from django.utils.translation import ugettext_lazy
 
-from enumfields import Enum, IntEnum
+from enumfields import ChoiceEnum, NumChoiceEnum, Choice
 
 
-class Color(Enum):
+class Color(ChoiceEnum):
     __order__ = 'RED GREEN BLUE'
 
-    RED = 'r'
+    RED = Choice('r', 'Reddish')
     GREEN = 'g'
-    BLUE = 'b'
-
-    class Labels:
-        RED = 'Reddish'
-        BLUE = ugettext_lazy('bluë')
+    BLUE = Choice('b', ugettext_lazy('bluë'))
 
 
-class Taste(Enum):
+class Taste(ChoiceEnum):
     SWEET = 1
     SOUR = 2
     BITTER = 3
@@ -26,26 +22,23 @@ class Taste(Enum):
     UMAMI = 5
 
 
-class ZeroEnum(Enum):
+class ZeroEnum(ChoiceEnum):
     ZERO = 0
     ONE = 1
 
 
-class IntegerEnum(IntEnum):
-    A = 0
+class IntegerEnum(NumChoiceEnum):
+    A = Choice(0, 'foo')
     B = 1
-
-    class Labels:
-        A = 'foo'
+    C = 2
 
 
-class LabeledEnum(Enum):
-    FOO = 'foo'
-    BAR = 'bar'
-    FOOBAR = 'foobar'
+class LabeledEnum(ChoiceEnum):
+    FOO = Choice('foo', 'Foo')
+    BAR = Choice('bar', 'Bar')
+    FOOBAR = Choice('foobar', 'Foo')  # this is intentional. see test_nonunique_label
 
-    class Labels:
-        FOO = 'Foo'
-        BAR = 'Bar'
-        # this is intentional. see test_nonunique_label
-        FOOBAR = 'Foo'
+
+class SubIntegerEnum(NumChoiceEnum):
+    C = Choice(0, 'C', parents=(IntegerEnum.A, IntegerEnum.B))
+    D = Choice(1, 'D', parents=(IntegerEnum.B,))

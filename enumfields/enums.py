@@ -22,9 +22,9 @@ class ChoiceEnumMeta(BaseEnumMeta):
             for name in member_names
         }
         attrs._member_names = []
-        for name in member_names:
-            attrs.pop(name)
-            attrs[name] = choices[name].value
+        for member_name in member_names:
+            attrs.pop(member_name)
+            attrs[member_name] = choices[member_name].value
         attrs._member_names = member_names
 
         obj = BaseEnumMeta.__new__(mcs, name, bases, attrs)

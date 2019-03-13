@@ -1,13 +1,13 @@
 This package lets you use real Python (PEP435_-style) enums with Django.
 
-.. image:: https://travis-ci.org/hzdg/django-enumfields.svg?branch=master
-    :target: https://travis-ci.org/hzdg/django-enumfields
+.. image:: https://travis-ci.org/druids/django-choice-enumfields.svg?branch=master
+    :target: https://travis-ci.org/druids/django-choice-enumfields
 
 
 Installation
 ------------
 
-1. ``pip install django-enumfields``
+1. ``pip install django-choice-enumfields``
 
 
 Included Tools
@@ -83,7 +83,7 @@ Call the ``formfield`` method to use an ``EnumField`` directly in a ``Form``.
 ChoiceEnum
 ``````````
 
-Normally, you just use normal PEP435_-style enums, however, django-enumfields
+Normally, you just use normal PEP435_-style enums, however, django-choice-enumfields
 also encludes its own version of ChoiceEnum with a few extra bells and whistles.
 Namely, the smart definition of labels which are used, for example, in admin
 dropdowns. By default, it will create labels by title-casing your constant

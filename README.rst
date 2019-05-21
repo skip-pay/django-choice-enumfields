@@ -56,7 +56,7 @@ EnumSubField, NumEnumSubField
 
     class ColorType(ChoiceEnum):
         LIGHT = Choice('l', 'light', parents=(Color.RED, Color.BLUE))
-        DARK = Choice('d', 'dard', parents=(Color.RED, Color.GREEN))
+        DARK = Choice('d', 'dark', parents=(Color.RED, Color.GREEN))
         TRANSPARENT = Choice('t', 'transparent', parents=(Color.GREEN))
 
     class MyModel(models.Model):
@@ -64,10 +64,11 @@ EnumSubField, NumEnumSubField
         color = EnumField(Color, max_length=1)
         color_type = EnumSubField('color', ColorType, max_length=1)
 
-    MyModel(color=Color.RED, color_type=Color.LIGHT).full_clean()  # OK
-    MyModel(color=Color.RED, color_type=Color.TRANSPARENT).full_clean()  # Raise ValidationError
+    MyModel(color=Color.RED, color_type=ColorType.LIGHT).full_clean()  # OK
+    MyModel(color=Color.RED, color_type=ColorType.TRANSPARENT).full_clean()  # Raise ValidationError
 
 ``EnumSubField`` automatically validates if parents requirement is satisfied.
+
 
 Usage in Forms
 ~~~~~~~~~~~~~~

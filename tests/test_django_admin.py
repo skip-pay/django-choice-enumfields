@@ -3,15 +3,18 @@ import re
 import uuid
 
 import pytest
+
+from enumfields import NumEnumField
+
+from .enums import Color, IntegerEnum, StateFlow, StateFlowAnyFirst, Taste, ZeroEnum
+from .models import MyModel
+
 try:
     from django.core.urlresolvers import reverse  # Django 1.x
 except ImportError:
     from django.urls import reverse  # Django 2.x
 
-from enumfields import NumEnumField
 
-from .enums import Color, IntegerEnum, Taste, ZeroEnum
-from .models import MyModel
 
 
 @pytest.mark.django_db
@@ -25,6 +28,8 @@ def test_model_admin_post(admin_client):
         'taste_int': Taste.SWEET.value,
         'random_code': secret_uuid,
         'zero2': ZeroEnum.ZERO.value,
+        'state': StateFlow.START.value,
+        'any_first_state': StateFlowAnyFirst.START.value,
     }
     response = admin_client.post(url, follow=True, data=post_data)
     response.render()

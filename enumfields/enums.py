@@ -5,9 +5,11 @@ from enum import _EnumDict
 
 class Choice:
 
-    def __init__(self, value, label, **kwargs):
+    def __init__(self, value, label, next=None, initial=True, **kwargs):
         self.value = value
         self.label = label
+        self.next = next
+        self.initial = initial
         for k, v in kwargs.items():
             setattr(self, k, v)
 

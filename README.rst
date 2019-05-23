@@ -69,6 +69,36 @@ EnumSubField, NumEnumSubField
 
 ``EnumSubField`` automatically validates if parents requirement is satisfied.
 
+With ``EnumSubField``, ``EnumField``, ``NumEnumSubField`` and ``NumEnumField``
+comes validation of initial and allowed transitions between choices out of the box.
+
+.. code-block:: python
+
+    from enumfields import EnumField
+    from enumfields import Choice, ChoiceEnum
+
+    class StateFlow(ChoiceEnum):
+        START = Choice('s', 'start', next={'PROCESSING'})
+        PROCESSING = Choice('p', 'processing', next={'END'}, initial=False)
+        END = Choice('e', 'end', next=set(), initial=False)
+
+    class MyModel(models.Model):
+
+        state = EnumField(StateFlow, max_length=1)
+
+    MyModel(state=StateFlow.START).full_clean()  # OK
+
+    # Raise ValidationError because PROCESSING is not in initial states
+    MyModel(state=StateFlow.PROCESSING).full_clean()
+
+    model = MyModel.objects.create(StateFlow.START)
+    model.state = StateFlow.END
+    # Raise ValidationError because END is not next state after START
+    model.full_clean()
+
+    model.state = StateFlow.PROCESSING
+    model.full_clean()  # OK
+
 
 Usage in Forms
 ~~~~~~~~~~~~~~

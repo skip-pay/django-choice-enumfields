@@ -42,3 +42,15 @@ class LabeledEnum(ChoiceEnum):
 class SubIntegerEnum(NumChoiceEnum):
     C = Choice(0, 'C', parents=(IntegerEnum.A, IntegerEnum.B))
     D = Choice(1, 'D', parents=(IntegerEnum.B,))
+
+
+class StateFlowAnyFirst(NumChoiceEnum):
+    START = Choice(0, 'start', next={'PROCESSING'})
+    PROCESSING = Choice(1, 'processing', next={'END'})
+    END = Choice(2, 'end', next=set())
+
+
+class StateFlow(NumChoiceEnum):
+    START = Choice(4, 'start', next={'PROCESSING'})
+    PROCESSING = Choice(5, 'processing', next={'END'}, initial=False)
+    END = Choice(6, 'end', next=set(), initial=False)

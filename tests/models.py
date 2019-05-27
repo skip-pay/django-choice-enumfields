@@ -2,7 +2,7 @@ from django.db import models
 
 from enumfields import EnumField, NumEnumField, NumEnumSubField
 
-from .enums import Color, IntegerEnum, LabeledEnum, Taste, ZeroEnum, SubIntegerEnum
+from .enums import Color, IntegerEnum, LabeledEnum, StateFlow, StateFlowAnyFirst, SubIntegerEnum, Taste, ZeroEnum
 
 
 class MyModel(models.Model):
@@ -22,3 +22,5 @@ class MyModel(models.Model):
 
     zero2 = NumEnumField(ZeroEnum, default=ZeroEnum.ZERO)
     labeled_enum = EnumField(LabeledEnum, blank=True, null=True)
+    state = NumEnumField(StateFlow, default=StateFlow.START)
+    any_first_state = NumEnumField(StateFlowAnyFirst, default=StateFlowAnyFirst.START)

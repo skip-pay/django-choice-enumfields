@@ -28,10 +28,50 @@ class CastOnAssignDescriptor:
         return obj.__dict__[self.field.name]
 
     def __set__(self, obj, value):
-        obj.__dict__[self.field.name] = self.field.to_python(value)
+        initial_field_name = self.field.get_initial_cache_name()
+        python_value = self.field.to_python(value)
+        obj.__dict__.setdefault(initial_field_name, python_value)
+        obj.__dict__[self.field.name] = python_value
 
 
-class EnumFieldMixin:
+class EnumFieldValidationMixin:
+
+    def get_initial_cache_name(self):
+        return '_initial_{}'.format(self.name)
+
+    def _validate_next_value(self, value, model_instance):
+        initial_field_name = self.get_initial_cache_name()
+        previous_choice = getattr(model_instance, initial_field_name)
+        if (
+            previous_choice is not None
+            and value != previous_choice
+            and previous_choice.next is not None
+            and value.name not in previous_choice.next
+        ):
+            raise ValidationError(
+                ugettext(
+                    'Transition from current "{}" choice to "{}" choice is not allowed'
+                ).format(
+                    previous_choice.name, value.name
+                )
+            )
+
+    def _validate_inital_value(self, value, model_instance):
+        if model_instance._state.adding and not value.initial:
+            initial_choices = {
+                choice for choice in self.enum if choice.initial
+            }
+            raise ValidationError(
+                ugettext('Allowed choices are {}.').format(
+                    ', '.join(
+                        ('{} ({})'.format(*(choice.name, choice.value))
+                         for choice in initial_choices)
+                    )
+                )
+            )
+
+
+class EnumFieldMixin(EnumFieldValidationMixin):
 
     def __init__(self, enum, **options):
         if isinstance(enum, str):
@@ -127,6 +167,11 @@ class EnumFieldMixin:
             **kwargs
         )
 
+    def validate(self, value, model_instance):
+        self._validate_inital_value(value, model_instance)
+        self._validate_next_value(value, model_instance)
+        super(EnumFieldMixin, self).validate(value, model_instance)
+
 
 class EnumField(EnumFieldMixin, models.CharField):
 
@@ -159,7 +204,7 @@ class NumEnumField(EnumFieldMixin, models.IntegerField):
             return self.to_python(value).value
 
 
-class EnumSubFieldMixin:
+class EnumSubFieldMixin(EnumFieldValidationMixin):
 
     def __init__(self, parent_field_name, enum, **options):
         self.parent_field_name = parent_field_name
@@ -179,17 +224,11 @@ class EnumSubFieldMixin:
             choice for choice in self.enum if supvalue in choice.parents
         }
 
-    def clean(self, value, model_instance):
-        if self._get_all_parent_choices(self._get_supvalue(model_instance)):
-            return super().clean(value, model_instance)
-        else:
-            return None
-
-    def _raise_error_if_value_should_be_empty(self, value, supvalue):
+    def _validate_parent_value_empty(self, value, supvalue):
         if supvalue not in self._get_all_parent_values() and value is not None:
             raise ValidationError(ugettext('Value must be empty'))
 
-    def _raise_error_if_value_not_allowed(self, value, supvalue):
+    def _validate_parent_value(self, value, supvalue):
         allowed_values = self._get_all_parent_choices(supvalue)
         if allowed_values and value not in allowed_values:
             raise ValidationError(ugettext('Allowed choices are {}.').format(
@@ -197,8 +236,13 @@ class EnumSubFieldMixin:
             ))
 
     def validate(self, value, model_instance):
-        self._raise_error_if_value_should_be_empty(value, self._get_supvalue(model_instance))
-        self._raise_error_if_value_not_allowed(value, self._get_supvalue(model_instance))
+        parent_field_value = self._get_supvalue(model_instance)
+        if self._get_all_parent_choices(parent_field_value):
+            self._validate_parent_value_empty(value, parent_field_value)
+            self._validate_parent_value(value, parent_field_value)
+        self._validate_inital_value(value, model_instance)
+        self._validate_next_value(value, model_instance)
+        super().validate(value, model_instance)
 
     def deconstruct(self):
         name, path, args, kwargs = super().deconstruct()

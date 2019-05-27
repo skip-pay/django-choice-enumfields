@@ -1,10 +1,11 @@
 # -- encoding: UTF-8 --
 
-import pytest
-from django.db import connection
 from django.core.exceptions import ValidationError
+from django.db import connection
 
-from .enums import Color, IntegerEnum, LabeledEnum, Taste, ZeroEnum, SubIntegerEnum
+import pytest
+
+from .enums import Color, IntegerEnum, LabeledEnum, StateFlow, StateFlowAnyFirst, SubIntegerEnum, Taste, ZeroEnum
 from .models import MyModel
 
 
@@ -112,3 +113,35 @@ def test_sub_enum_field():
     MyModel(color=Color.RED, int_enum=IntegerEnum.B, sub_int_enum=SubIntegerEnum.C).full_clean()
     MyModel(color=Color.RED, int_enum=IntegerEnum.B, sub_int_enum=SubIntegerEnum.D).full_clean()
     MyModel(color=Color.RED).full_clean()
+
+
+@pytest.mark.django_db
+def test_next_states_enum_field():
+    model = MyModel.objects.create(color=Color.RED)
+
+    with pytest.raises(ValidationError):
+        # invalid transition from START to END
+        model.any_first_state = StateFlow.END
+        model.full_clean()
+
+    model.any_first_state = StateFlowAnyFirst.PROCESSING
+    model.full_clean()
+
+    model_from_db = MyModel.objects.get(pk=model.pk)
+
+    with pytest.raises(ValidationError):
+        model_from_db.any_first_state = StateFlow.END
+        model_from_db.full_clean()
+
+    model_from_db.any_first_state = StateFlowAnyFirst.PROCESSING
+    model_from_db.full_clean()
+
+    MyModel(color=Color.RED, any_first_state=StateFlowAnyFirst.END).full_clean()
+
+
+def test_initial_enum_field():
+    MyModel(color=Color.RED, state=StateFlow.START).full_clean()
+
+    with pytest.raises(ValidationError):
+        # END is not initial state
+        MyModel(color=Color.RED, state=StateFlow.END).full_clean()

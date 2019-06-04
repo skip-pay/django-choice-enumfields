@@ -4,6 +4,7 @@ import django
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models.fields import BLANK_CHOICE_DASH
+from django.db.models.signals import post_save
 from django.utils.functional import cached_property
 from django.utils.module_loading import import_string
 from django.utils.translation import ugettext
@@ -89,7 +90,20 @@ class EnumFieldMixin(EnumFieldValidationMixin):
 
     def contribute_to_class(self, cls, name):
         super(EnumFieldMixin, self).contribute_to_class(cls, name)
+
+        def update_initial_field(instance, created, update_fields, **kwargs):
+            if not created:
+                fields = (
+                    instance._meta.get_fields() if update_fields is None
+                    else [getattr(instance, field_name, None) for field_name in update_fields]
+                )
+                for field in fields:
+                    if isinstance(field, EnumFieldMixin):
+                        initial_field_name = field.get_initial_cache_name()
+                        instance.__dict__[initial_field_name] = getattr(instance, field.name)
+
         setattr(cls, name, CastOnAssignDescriptor(self))
+        post_save.connect(update_initial_field, sender=cls, weak=False)
 
     def to_python(self, value):
         if value is None or value == '':

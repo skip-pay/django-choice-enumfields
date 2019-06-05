@@ -42,7 +42,7 @@ class EnumFieldValidationMixin:
 
     def _validate_next_value(self, value, model_instance):
         initial_field_name = self.get_initial_cache_name()
-        previous_choice = getattr(model_instance, initial_field_name)
+        previous_choice = getattr(model_instance, initial_field_name, None)
         if (
             previous_choice is not None
             and value != previous_choice
@@ -91,16 +91,10 @@ class EnumFieldMixin(EnumFieldValidationMixin):
     def contribute_to_class(self, cls, name):
         super(EnumFieldMixin, self).contribute_to_class(cls, name)
 
-        def update_initial_field(instance, created, update_fields, **kwargs):
-            if not created:
-                fields = (
-                    instance._meta.get_fields() if update_fields is None
-                    else [getattr(instance, field_name, None) for field_name in update_fields]
-                )
-                for field in fields:
-                    if isinstance(field, EnumFieldMixin):
-                        initial_field_name = field.get_initial_cache_name()
-                        instance.__dict__[initial_field_name] = getattr(instance, field.name)
+        def update_initial_field(instance, update_fields, **kwargs):
+            if update_fields is None or self.name in update_fields:
+                initial_field_name = self.get_initial_cache_name()
+                instance.__dict__[initial_field_name] = getattr(instance, self.name)
 
         setattr(cls, name, CastOnAssignDescriptor(self))
         post_save.connect(update_initial_field, sender=cls, weak=False)

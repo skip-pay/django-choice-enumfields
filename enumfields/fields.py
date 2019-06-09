@@ -4,6 +4,7 @@ import django
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models.fields import BLANK_CHOICE_DASH
+from django.db.models.signals import post_save
 from django.utils.functional import cached_property
 from django.utils.module_loading import import_string
 from django.utils.translation import ugettext
@@ -41,7 +42,7 @@ class EnumFieldValidationMixin:
 
     def _validate_next_value(self, value, model_instance):
         initial_field_name = self.get_initial_cache_name()
-        previous_choice = getattr(model_instance, initial_field_name)
+        previous_choice = getattr(model_instance, initial_field_name, None)
         if (
             previous_choice is not None
             and value != previous_choice
@@ -89,7 +90,14 @@ class EnumFieldMixin(EnumFieldValidationMixin):
 
     def contribute_to_class(self, cls, name):
         super(EnumFieldMixin, self).contribute_to_class(cls, name)
+
+        def update_initial_field(instance, update_fields, **kwargs):
+            if update_fields is None or self.name in update_fields:
+                initial_field_name = self.get_initial_cache_name()
+                instance.__dict__[initial_field_name] = getattr(instance, self.name)
+
         setattr(cls, name, CastOnAssignDescriptor(self))
+        post_save.connect(update_initial_field, sender=cls, weak=False)
 
     def to_python(self, value):
         if value is None or value == '':

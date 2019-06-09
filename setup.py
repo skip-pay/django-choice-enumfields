@@ -29,7 +29,7 @@ class PyTest(TestCommand):
 
 setup(
     name='django-choice-enumfields',
-    version='1.0.2',
+    version='1.0.3',
     author='HZDG, Lubos Matl',
     author_email='matllubos@gmail.com',
     description='Real Python Enums for Django.',

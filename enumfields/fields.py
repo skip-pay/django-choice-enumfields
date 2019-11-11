@@ -88,13 +88,24 @@ class EnumFieldMixin(EnumFieldValidationMixin):
 
         super(EnumFieldMixin, self).__init__(**options)
 
+    def refresh_from_db(self, instance):
+        initial_field_name = self.get_initial_cache_name()
+        instance.__dict__[initial_field_name] = getattr(instance, self.name)
+
     def contribute_to_class(self, cls, name):
-        super(EnumFieldMixin, self).contribute_to_class(cls, name)
+        super().contribute_to_class(cls, name)
 
         def update_initial_field(instance, update_fields, **kwargs):
             if update_fields is None or self.name in update_fields:
-                initial_field_name = self.get_initial_cache_name()
-                instance.__dict__[initial_field_name] = getattr(instance, self.name)
+                self.refresh_from_db(instance)
+
+        tmp_refresh_from_db = cls.refresh_from_db
+        def refresh_from_db(instance, using=None, fields=None, *args, **kwargs):
+            returned_value = tmp_refresh_from_db(instance, using=using, fields=fields, *args, **kwargs)
+            if not fields or self.name in fields:
+                self.refresh_from_db(instance)
+            return returned_value
+        cls.refresh_from_db = refresh_from_db
 
         setattr(cls, name, CastOnAssignDescriptor(self))
         post_save.connect(update_initial_field, sender=cls, weak=False)
@@ -144,7 +155,7 @@ class EnumFieldMixin(EnumFieldValidationMixin):
 
             return self.enum(self.default)
 
-        return super(EnumFieldMixin, self).get_default()
+        return super().get_default()
 
     def deconstruct(self):
         name, path, args, kwargs = super().deconstruct()
@@ -162,14 +173,14 @@ class EnumFieldMixin(EnumFieldValidationMixin):
         return [
             (i.value if isinstance(i, Enum) else i, display)
             for (i, display)
-            in super(EnumFieldMixin, self).get_choices(include_blank, blank_choice)
+            in super().get_choices(include_blank, blank_choice)
         ]
 
     def formfield(self, form_class=None, choices_form_class=None, **kwargs):
         if not choices_form_class:
             choices_form_class = EnumChoiceField
 
-        return super(EnumFieldMixin, self).formfield(
+        return super().formfield(
             form_class=form_class,
             choices_form_class=choices_form_class,
             **kwargs
@@ -178,14 +189,14 @@ class EnumFieldMixin(EnumFieldValidationMixin):
     def validate(self, value, model_instance):
         self._validate_inital_value(value, model_instance)
         self._validate_next_value(value, model_instance)
-        super(EnumFieldMixin, self).validate(value, model_instance)
+        super().validate(value, model_instance)
 
 
 class EnumField(EnumFieldMixin, models.CharField):
 
     def __init__(self, enum, **kwargs):
         kwargs.setdefault('max_length', 10)
-        super(EnumField, self).__init__(enum, **kwargs)
+        super().__init__(enum, **kwargs)
         self.validators = []
 
 

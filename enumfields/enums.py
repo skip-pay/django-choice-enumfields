@@ -1,6 +1,6 @@
 from enum import Enum as BaseEnum
 from enum import EnumMeta as BaseEnumMeta
-from enum import _EnumDict
+from enum import _EnumDict, unique
 
 
 class Choice:
@@ -36,7 +36,7 @@ class ChoiceEnumMeta(BaseEnumMeta):
                 if k != 'value':
                     setattr(m, k, v)
 
-        return obj
+        return unique(obj)
 
 
 class ChoiceEnum(ChoiceEnumMeta('ChoiceEnum', (BaseEnum,), _EnumDict())):

@@ -40,6 +40,11 @@ class ChoiceEnumMeta(ChoicesMeta):
                         value = (value, label)
                     else:
                         value = tuple(value) + tuple(label)
+            else:
+                extra_data.append({
+                    'next': None,
+                    'initial': True
+                })
             dict.__setitem__(classdict, key, value)
         cls = super().__new__(metacls, classname, bases, classdict)
         cls._value2data_map_ = dict(zip(cls._value2member_map_, extra_data))

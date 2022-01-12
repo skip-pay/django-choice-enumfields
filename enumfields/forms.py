@@ -17,10 +17,10 @@ class EnumChoiceFieldMixin:
             return ''
         if isinstance(value, ChoicesEnum):
             value = value.value
-        return str(value)
+        return value
 
     def valid_value(self, value):
-        if hasattr(value, 'value'):  # Try validation using the enum value first.
+        if isinstance(value, ChoicesEnum):  # Try validation using the enum value first.
             if super().valid_value(value.value):
                 return True
         return super().valid_value(value)

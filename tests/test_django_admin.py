@@ -4,17 +4,12 @@ import uuid
 
 import pytest
 
-from enumfields import NumEnumField
+from enumfields import IntegerEnumField
 
 from .enums import Color, IntegerEnum, StateFlow, StateFlowAnyFirst, Taste, ZeroEnum
 from .models import MyModel
 
-try:
-    from django.core.urlresolvers import reverse  # Django 1.x
-except ImportError:
-    from django.urls import reverse  # Django 2.x
-
-
+from django.urls import reverse
 
 
 @pytest.mark.django_db
@@ -25,7 +20,6 @@ def test_model_admin_post(admin_client):
     post_data = {
         'color': Color.RED.value,
         'taste': Taste.UMAMI.value,
-        'taste_int': Taste.SWEET.value,
         'random_code': secret_uuid,
         'zero2': ZeroEnum.ZERO.value,
         'state': StateFlow.START.value,
@@ -43,7 +37,6 @@ def test_model_admin_post(admin_client):
         assert False, "Object wasn't created in the database"
     assert inst.color == Color.RED, "Redness not assured"
     assert inst.taste == Taste.UMAMI, "Umami not there"
-    assert inst.taste_int == Taste.SWEET, "Not sweet enough"
 
 
 @pytest.mark.django_db
@@ -76,12 +69,12 @@ def test_model_admin_filter(admin_client, q_color, q_taste, q_int_enum):
     response.render()
 
     # Look for the paginator line that lists how many results we found...
-    count = int(re.search('(\d+) my model', response.content.decode('utf8')).group(1))
+    count = int(re.search(r'(\d+) my model', response.content.decode('utf8')).group(1))
     # and compare it to what we expect.
     assert count == MyModel.objects.filter(**lookup).count()
 
 
 def test_django_admin_lookup_value_for_integer_enum_field():
-    field = NumEnumField(Taste)
+    field = IntegerEnumField(Taste)
 
-    assert field.get_prep_value(str(Taste.BITTER)) == 3, "get_prep_value should be able to convert from strings"
+    assert field.get_prep_value(str(Taste.BITTER.value)) == 3, "get_prep_value should be able to convert from strings"

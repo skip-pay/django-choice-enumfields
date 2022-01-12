@@ -1,11 +1,9 @@
-from __future__ import print_function
-
 from django.contrib.admin.filters import ChoicesFieldListFilter
-from django.utils.encoding import force_text
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 
 class EnumFieldListFilter(ChoicesFieldListFilter):
+
     def choices(self, cl):
         yield {
             'selected': self.lookup_val is None,
@@ -13,11 +11,11 @@ class EnumFieldListFilter(ChoicesFieldListFilter):
             'display': _('All'),
         }
         for enum_value in self.field.enum:
-            str_value = force_text(enum_value.value)
+            str_value = str(enum_value.value)
             yield {
                 'selected': (str_value == self.lookup_val),
-                'query_string': cl.get_query_string({self.lookup_kwarg: str_value}),
-                'display': getattr(enum_value, 'label', None) or force_text(enum_value),
+                'query_string': cl.get_query_string({self.lookup_kwarg: enum_value}),
+                'display': getattr(enum_value, 'label', None) or str(enum_value),
             }
 
     def queryset(self, request, queryset):
@@ -28,7 +26,7 @@ class EnumFieldListFilter(ChoicesFieldListFilter):
             # for non-string-valued enums we'll need to fall back to attempt a slower
             # linear stringly-typed lookup.
             for enum_value in self.field.enum:
-                if force_text(enum_value.value) == self.lookup_val:
+                if str(enum_value.value) == self.lookup_val:
                     self.used_parameters[self.lookup_kwarg] = enum_value
                     break
-        return super(EnumFieldListFilter, self).queryset(request, queryset)
+        return super().queryset(request, queryset)

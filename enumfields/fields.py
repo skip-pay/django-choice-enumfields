@@ -1,4 +1,4 @@
-from enum import Enum, _EnumDict
+from enum import Enum
 
 import django
 from django.core.exceptions import ValidationError
@@ -7,7 +7,7 @@ from django.db.models.fields import BLANK_CHOICE_DASH
 from django.db.models.signals import post_save
 from django.utils.functional import cached_property
 from django.utils.module_loading import import_string
-from django.utils.translation import ugettext
+from django.utils.translation import gettext
 
 from .enums import ChoicesEnum, Choice
 from .forms import EnumChoiceField
@@ -51,7 +51,7 @@ class EnumFieldValidationMixin:
             and value.name not in previous_choice.next
         ):
             raise ValidationError(
-                ugettext(
+                gettext(
                     'Transition from current "{}" choice to "{}" choice is not allowed'
                 ).format(
                     previous_choice.name, value.name
@@ -64,7 +64,7 @@ class EnumFieldValidationMixin:
                 choice for choice in self.enum if choice.initial
             }
             raise ValidationError(
-                ugettext('Allowed choices are {}.').format(
+                gettext('Allowed choices are {}.').format(
                     ', '.join(
                         ('{} ({})'.format(*(choice.name, choice.value))
                          for choice in initial_choices)
@@ -136,17 +136,16 @@ class EnumFieldMixin(EnumFieldValidationMixin):
         post_save.connect(update_initial_field, sender=cls, weak=False)
 
     def to_python(self, value):
-        if value is None or value == '':
-            return None
-        elif isinstance(value, self.enum):
+        if isinstance(value, self.enum):
             return value
         else:
+            value = super().to_python(value)
+            if value in [None, '']:
+                return None
+
             try:
                 return self.enum(value)
             except ValueError:
-                print(type(value))
-                print(self.enum)
-
                 raise ValidationError(
                     '%s is not a valid value for enum %s' % (value, self.enum),
                     code='invalid_enum_value'
@@ -276,12 +275,12 @@ class EnumSubFieldMixin(EnumFieldValidationMixin):
 
     def _validate_parent_value_empty(self, value, supvalue):
         if supvalue not in self._get_all_parent_values() and value is not None:
-            raise ValidationError(ugettext('Value must be empty'))
+            raise ValidationError(gettext('Value must be empty'))
 
     def _validate_parent_value(self, value, supvalue):
         allowed_values = self._get_all_parent_choices(supvalue)
         if allowed_values and value not in allowed_values:
-            raise ValidationError(ugettext('Allowed choices are {}.').format(
+            raise ValidationError(gettext('Allowed choices are {}.').format(
                 ', '.join(('{} ({})'.format(*(val.label, val)) for val in allowed_values))
             ))
 

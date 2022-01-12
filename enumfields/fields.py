@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, _EnumDict
 
 import django
 from django.core.exceptions import ValidationError
@@ -9,6 +9,7 @@ from django.utils.functional import cached_property
 from django.utils.module_loading import import_string
 from django.utils.translation import ugettext
 
+from .enums import ChoicesEnum, Choice
 from .forms import EnumChoiceField
 
 
@@ -58,7 +59,7 @@ class EnumFieldValidationMixin:
             )
 
     def _validate_inital_value(self, value, model_instance):
-        if model_instance._state.adding and not value.initial:
+        if model_instance._state.adding and value and not value.initial:
             initial_choices = {
                 choice for choice in self.enum if choice.initial
             }
@@ -72,13 +73,37 @@ class EnumFieldValidationMixin:
             )
 
 
+def deconstruct_enum(enum):
+    name, enum_base, enum_type, choices = enum.deconstruct_cls()
+    if not enum_type and not choices:
+        return enum_base
+
+    return {
+        'name': name,
+        'base': enum_base,
+        'type': enum_type,
+        'choices': choices
+    }
+
+
+def construct_enum(enum):
+    if isinstance(enum, str):
+        return import_string(enum)
+    elif isinstance(enum, dict):
+        enum_type = None
+        if enum['type']:
+            enum_type = import_string(enum['type']) if isinstance(enum['type'], str) else enum['type']
+        return import_string(enum['base'])(enum['name'], {
+            name: Choice(**choice) for name, choice in enum['choices'].items()
+        }, type=enum_type)
+    else:
+        return enum
+
+
 class EnumFieldMixin(EnumFieldValidationMixin):
 
     def __init__(self, enum, **options):
-        if isinstance(enum, str):
-            self.enum = import_string(enum)
-        else:
-            self.enum = enum
+        self.enum = construct_enum(enum)
 
         if 'choices' not in options:
             options['choices'] = [  # choices for the TypedChoiceField
@@ -86,7 +111,7 @@ class EnumFieldMixin(EnumFieldValidationMixin):
                 for i in self.enum
             ]
 
-        super(EnumFieldMixin, self).__init__(**options)
+        super().__init__(**options)
 
     def refresh_from_db(self, instance):
         initial_field_name = self.get_initial_cache_name()
@@ -113,14 +138,19 @@ class EnumFieldMixin(EnumFieldValidationMixin):
     def to_python(self, value):
         if value is None or value == '':
             return None
-        if isinstance(value, self.enum):
+        elif isinstance(value, self.enum):
             return value
-        for m in self.enum:
-            if value == m:
-                return m
-            if value == m.value or str(value) == str(m.value) or str(value) == str(m):
-                return m
-        raise ValidationError('%s is not a valid value for enum %s' % (value, self.enum), code='invalid_enum_value')
+        else:
+            try:
+                return self.enum(value)
+            except ValueError:
+                print(type(value))
+                print(self.enum)
+
+                raise ValidationError(
+                    '%s is not a valid value for enum %s' % (value, self.enum),
+                    code='invalid_enum_value'
+                )
 
     def get_prep_value(self, value):
         if value is None:
@@ -158,14 +188,14 @@ class EnumFieldMixin(EnumFieldValidationMixin):
         return super().get_default()
 
     def deconstruct(self):
-        name, path, args, kwargs = super().deconstruct()
-        kwargs['enum'] = self.enum
-        kwargs.pop('choices', None)
-        if 'default' in kwargs:
-            if hasattr(kwargs['default'], 'value'):
-                kwargs['default'] = kwargs['default'].value
+        name, path, args, keywords = super().deconstruct()
+        keywords['enum'] = deconstruct_enum(self.enum)
+        keywords.pop('choices', None)
+        if 'default' in keywords:
+            if hasattr(keywords['default'], 'value'):
+                keywords['default'] = keywords['default'].value
 
-        return name, path, args, kwargs
+        return name, path, args, keywords
 
     def get_choices(self, include_blank=True, blank_choice=BLANK_CHOICE_DASH):
         # Force enum fields' options to use the `value` of the enumeration
@@ -192,15 +222,16 @@ class EnumFieldMixin(EnumFieldValidationMixin):
         super().validate(value, model_instance)
 
 
-class EnumField(EnumFieldMixin, models.CharField):
+class CharEnumField(EnumFieldMixin, models.CharField):
 
     def __init__(self, enum, **kwargs):
-        kwargs.setdefault('max_length', 10)
+        enum = construct_enum(enum)
+        kwargs.setdefault('max_length', max(max([len(str(choice.value)) for choice in enum]), 10))
         super().__init__(enum, **kwargs)
         self.validators = []
 
 
-class NumEnumField(EnumFieldMixin, models.IntegerField):
+class IntegerEnumField(EnumFieldMixin, models.IntegerField):
 
     @cached_property
     def validators(self):
@@ -264,14 +295,14 @@ class EnumSubFieldMixin(EnumFieldValidationMixin):
         super().validate(value, model_instance)
 
     def deconstruct(self):
-        name, path, args, kwargs = super().deconstruct()
-        kwargs['parent_field_name'] = self.parent_field_name
-        return name, path, args, kwargs
+        name, path, args, keywords = super().deconstruct()
+        keywords['parent_field_name'] = self.parent_field_name
+        return name, path, args, keywords
 
 
-class EnumSubField(EnumSubFieldMixin, EnumField):
+class CharEnumSubField(EnumSubFieldMixin, CharEnumField):
     pass
 
 
-class NumEnumSubField(EnumSubFieldMixin, NumEnumField):
+class IntegerEnumSubField(EnumSubFieldMixin, IntegerEnumField):
     pass

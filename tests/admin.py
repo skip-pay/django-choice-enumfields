@@ -9,6 +9,7 @@ from .models import MyModel
 
 
 class MyModelAdmin(admin.ModelAdmin):
+
     model = MyModel
     list_filter = [
         ('color', EnumFieldListFilter),

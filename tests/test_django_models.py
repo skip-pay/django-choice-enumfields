@@ -36,29 +36,6 @@ def test_db_value():
     assert cursor.fetchone()[0] == Color.RED.value
 
 
-@pytest.mark.django_db
-def test_enum_int_field_validators():
-    if not hasattr(connection.ops, 'integer_field_range'):
-        return pytest.skip('Needs connection.ops.integer_field_range')
-
-    # Make sure that integer_field_range returns a range.
-    # This is needed to make SQLite emulate a "real" db
-    orig_method = connection.ops.integer_field_range
-    connection.ops.integer_field_range = (lambda *args: (-100, 100))
-
-    m = MyModel(color=Color.RED)
-
-    # Uncache validators property of taste_int
-    for f in m._meta.fields:
-        if f.name == 'taste_int':
-            if 'validators' in f.__dict__:
-                del f.__dict__['validators']
-
-    # Run the validators
-    m.full_clean()
-
-    # Revert integer_field_range method
-    connection.ops.integer_field_range = orig_method
 
 
 @pytest.mark.django_db

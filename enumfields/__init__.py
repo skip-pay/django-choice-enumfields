@@ -1,2 +1,2 @@
-from .enums import ChoiceEnum, NumChoiceEnum, Choice
-from .fields import EnumField, EnumSubField, NumEnumField, NumEnumSubField
+from .enums import IntegerChoicesEnum, TextChoicesEnum, Choice
+from .fields import CharEnumField, CharEnumSubField, IntegerEnumField, IntegerEnumSubField

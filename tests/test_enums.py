@@ -7,7 +7,7 @@ from django.forms import BaseForm
 
 from enumfields import Choice, TextChoicesEnum, CharEnumField
 
-from .enums import Color, IntegerEnum
+from .enums import Color, IntegerEnum, IntegerAutoEnum, TextAutoEnum
 
 
 def test_choice_ordering():
@@ -74,3 +74,15 @@ def test_choice_enum_should_be_unique():
         class DuplicateEnum(TextChoicesEnum):
             A = Choice(1, 'a')
             B = Choice(1, 'b')
+
+
+def test_auto_integer_enum_should_generate_right_values():
+    assert IntegerAutoEnum.A.value == 1
+    assert IntegerAutoEnum.B.value == 2
+    assert IntegerAutoEnum.C.value == 3
+
+
+def test_auto_text_enum_should_generate_right_values():
+    assert TextAutoEnum.A.value == 'A'
+    assert TextAutoEnum.B.value == 'B'
+    assert TextAutoEnum.C.value == 'C'

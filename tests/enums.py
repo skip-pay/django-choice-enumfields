@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import unicode_literals
+from enum import auto
 
 from django.utils.translation import gettext_lazy
 
@@ -54,3 +54,15 @@ class StateFlow(IntegerChoicesEnum):
     START = Choice(4, 'start', next={'PROCESSING'})
     PROCESSING = Choice(5, 'processing', next={'END'}, initial=False)
     END = Choice(6, 'end', next=set(), initial=False)
+
+
+class IntegerAutoEnum(IntegerChoicesEnum):
+    A = auto()
+    B = auto(), 'b'
+    C = Choice(auto(), 'c')
+
+
+class TextAutoEnum(TextChoicesEnum):
+    A = auto()
+    B = auto(), 'b'
+    C = Choice(auto(), 'c')

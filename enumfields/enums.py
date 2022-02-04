@@ -1,5 +1,6 @@
 import enum
-from django.db.models.enums import ChoicesMeta
+
+from django.utils.functional import Promise
 
 
 class Choice:
@@ -16,42 +17,93 @@ def set_enum_attribute(enum, name, value_map):
     setattr(enum, name, property(lambda self: value_map[self.value].get(name)))
 
 
-class ChoiceEnumMeta(ChoicesMeta):
+class ChoiceEnumMeta(enum.EnumMeta):
 
-    def __new__(metacls, classname, bases, classdict):
+    def __new__(metacls, classname, bases, classdict, **kwds):
         extra_keys = {'next', 'initial'}
-
         extra_data = []
+
+        # Always is expected that start will be 1
+        auto_start = 1
+        auto_last_values = []
+        auto_count = 0
+
         for key in classdict._member_names:
             value = classdict[key]
+            member_extra_data = {
+                'next': None,
+                'initial': True,
+                'label': key.replace('_', ' ').title()
+            }
             if isinstance(value, Choice):
                 choice = value
                 value = choice.value
                 label = choice.label
-                extra_keys.update(choice.extra.keys())
-                extra_data.append({
-                    'next': choice.next,
-                    'initial': choice.initial,
-                    **choice.extra
-                })
+                member_extra_data.update(
+                    {
+                        'next': choice.next,
+                        'initial': choice.initial,
+                        **choice.extra
+                    }
+                )
 
-                if label is not None:
-                    if not isinstance(value, (list, tuple)):
-                        value = (value, label)
-                    else:
-                        value = tuple(value) + tuple(label)
+            elif (
+                    isinstance(value, (list, tuple)) and
+                    len(value) > 1 and
+                    isinstance(value[-1], (Promise, str))
+            ):
+                *value, label = value
+                value = tuple(value)
+                if len(value) == 1:
+                    value = value[0]
             else:
-                extra_data.append({
-                    'next': None,
-                    'initial': True
-                })
-            dict.__setitem__(classdict, key, value)
-        cls = super().__new__(metacls, classname, bases, classdict)
-        cls._value2data_map_ = dict(zip(cls._value2member_map_, extra_data))
+                label = None
 
+            if label is None:
+                label = key.replace('_', ' ').title()
+
+            member_extra_data['label'] = label
+
+            extra_keys.update(member_extra_data.keys())
+            extra_data.append(member_extra_data)
+            if isinstance(value, enum.auto):
+                value = classdict['_generate_next_value_'](key, auto_start, auto_count, auto_last_values)
+
+            auto_count += 1
+            auto_last_values.append(value)
+
+            # Use dict.__setitem__() to suppress defenses against double
+            # assignment in enum's classdict.
+            dict.__setitem__(classdict, key, value)
+        cls = super().__new__(metacls, classname, bases, classdict, **kwds)
+        cls._value2data_map_ = dict(zip(cls._value2member_map_, extra_data))
         for key in extra_keys:
             set_enum_attribute(cls, key, cls._value2data_map_)
-        return cls
+        return enum.unique(cls)
+
+    def __contains__(cls, member):
+        if not isinstance(member, enum.Enum):
+            # Allow non-enums to match against member values.
+            return any(x.value == member for x in cls)
+        return super().__contains__(member)
+
+    @property
+    def names(cls):
+        empty = ['__empty__'] if hasattr(cls, '__empty__') else []
+        return empty + [member.name for member in cls]
+
+    @property
+    def choices(cls):
+        empty = [(None, cls.__empty__)] if hasattr(cls, '__empty__') else []
+        return empty + [(member.value, member.label) for member in cls]
+
+    @property
+    def labels(cls):
+        return [label for _, label in cls.choices]
+
+    @property
+    def values(cls):
+        return [value for value, _ in cls.choices]
 
 
 def class_to_str(cls):

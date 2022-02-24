@@ -17,7 +17,7 @@ class EnumChoiceFieldMixin:
             return ''
         if isinstance(value, ChoicesEnum):
             value = value.value
-        return value
+        return super().prepare_value(value)
 
     def valid_value(self, value):
         if isinstance(value, ChoicesEnum):  # Try validation using the enum value first.
@@ -36,4 +36,11 @@ class EnumChoiceField(EnumChoiceFieldMixin, TypedChoiceField):
 
 
 class EnumMultipleChoiceField(EnumChoiceFieldMixin, TypedMultipleChoiceField):
-    pass
+
+    def prepare_value(self, value):
+        if value is None:
+            return ''
+        super_cls = super()
+        return [
+            super_cls.prepare_value(v) for v in value
+        ]

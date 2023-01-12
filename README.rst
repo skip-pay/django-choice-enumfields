@@ -7,7 +7,7 @@ This package lets you use real Python (PEP435_-style) enums with Django.
 Installation
 ------------
 
-1. ``pip install django-choice-enumfields``
+1. ``pip install skip-django-choice-enumfields``
 
 
 Included Tools

@@ -29,12 +29,12 @@ class PyTest(TestCommand):
 
 setup(
     name='skip-django-choice-enumfields',
-    version='1.1.3.1',
+    version='1.1.3.2',
     author='HZDG, Lubos Matl',
     author_email='matllubos@gmail.com',
     description='Real Python Enums for Django.',
     license='MIT',
-    url='https://github.com/druids/django-choice-enumfields',
+    url='https://github.com/skip-pay/django-choice-enumfields',
     long_description=README,
     packages=find_packages(exclude=['tests*']),
     zip_safe=False,

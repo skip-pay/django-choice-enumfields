@@ -1,4 +1,5 @@
 import enum
+from typing import Any
 
 from django.utils.functional import Promise
 
@@ -114,6 +115,10 @@ def class_to_str(cls):
 
 
 class ChoicesEnum(enum.Enum, metaclass=ChoiceEnumMeta):
+    value: Any
+    label: str
+    initial: bool
+    next: list[str] | None
 
     def deconstruct_choice(self):
         keywords = {'value': self.value}

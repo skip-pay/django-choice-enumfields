@@ -41,14 +41,12 @@ setup(
     classifiers=[
         'Environment :: Web Environment',
         'Framework :: Django',
-        'Framework :: Django :: 3.1',
-        'Framework :: Django :: 3.2',
+        'Framework :: Django :: 4.2',
         'Intended Audience :: Developers',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
         'Topic :: Internet :: WWW/HTTP',
     ],
     tests_require=[
@@ -57,5 +55,6 @@ setup(
         'djangorestframework',
         'pytz',
     ],
+    package_data={package: ["py.typed", ".pyi", "**/.pyi"] for package in find_packages(exclude=['tests*'])},
     cmdclass={'test': PyTest},
 )

@@ -1,3 +1,4 @@
+from typing import Any
 from rest_framework.fields import ChoiceField
 
 from enumfields.drf.fields import EnumField as EnumSerializerField
@@ -5,7 +6,7 @@ from enumfields.fields import EnumFieldMixin
 
 
 class EnumSupportSerializerMixin(object):
-    enumfield_options = {}
+    enumfield_options: dict[str, Any] = {}
 
     def build_standard_field(self, field_name, model_field):
         field_class, field_kwargs = (

@@ -2,7 +2,6 @@
 
 import os
 import sys
-
 from setuptools import find_packages, setup
 from setuptools.command.test import test as TestCommand
 
@@ -29,7 +28,7 @@ class PyTest(TestCommand):
 
 setup(
     name='skip-django-choice-enumfields',
-    version='1.1.3.2',
+    version='2.0.0',
     author='HZDG, Lubos Matl',
     author_email='matllubos@gmail.com',
     description='Real Python Enums for Django.',

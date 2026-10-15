@@ -28,7 +28,7 @@ class PyTest(TestCommand):
 
 setup(
     name='skip-django-choice-enumfields',
-    version='2.0.0',
+    version='2.0.1',
     author='HZDG, Lubos Matl',
     author_email='matllubos@gmail.com',
     description='Real Python Enums for Django.',

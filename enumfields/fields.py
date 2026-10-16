@@ -130,7 +130,8 @@ class EnumFieldMixin(EnumFieldValidationMixin):
         cls.refresh_from_db = refresh_from_db
 
         setattr(cls, name, CastOnAssignDescriptor(self))
-        post_save.connect(update_initial_field, sender=cls, weak=False)
+        self._update_initial_field = update_initial_field
+        post_save.connect(update_initial_field, sender=cls)
 
     def to_python(self, value):
         if isinstance(value, self.enum):

@@ -111,6 +111,11 @@ Call the ``formfield`` method to use an ``EnumField`` directly in a ``Form``.
 
         color = EnumField(Color, max_length=1).formfield()
 
+The blank choice of an enum field is the one Django uses for any other field
+with choices. On Django 6.1+ it follows Django's own label (the
+``USE_BLANK_CHOICE_DASH`` setting), so a project without that setting will see
+``- Select an option -`` instead of ``---------``.
+
 ChoiceEnum
 ``````````
 

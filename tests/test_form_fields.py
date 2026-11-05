@@ -1,7 +1,7 @@
 # -- encoding: UTF-8 --
 import django
 import pytest
-from django.db.models import BLANK_CHOICE_DASH
+from django.db import models
 from django.forms.models import modelform_factory, model_to_dict
 
 from .enums import Color, ZeroEnum
@@ -35,7 +35,9 @@ def test_bound_form_with_instance():
 def test_choices():
     form = get_form()
     assert form.base_fields["zero2"].choices == [(0, 'Zero'), (1, 'One')]
-    assert form.base_fields["int_enum"].choices == BLANK_CHOICE_DASH + [(0, 'foo'), (1, 'B'), (2, 'C')]
+    # The blank choice is the one Django uses for any other field with choices.
+    blank_choice = list(models.IntegerField(choices=[(0, 'foo')]).get_choices())[0]
+    assert form.base_fields["int_enum"].choices == [blank_choice, (0, 'foo'), (1, 'B'), (2, 'C')]
 
 
 def test_validation():

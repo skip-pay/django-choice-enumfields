@@ -3,7 +3,6 @@ from enum import Enum
 import django
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models.fields import BLANK_CHOICE_DASH
 from django.db.models.signals import post_save
 from django.utils.functional import cached_property
 from django.utils.module_loading import import_string
@@ -194,13 +193,15 @@ class EnumFieldMixin(EnumFieldValidationMixin):
 
         return name, path, args, keywords
 
-    def get_choices(self, include_blank=True, blank_choice=BLANK_CHOICE_DASH):
+    def get_choices(self, *args, **kwargs):
         # Force enum fields' options to use the `value` of the enumeration
         # member as the `value` of SelectFields and similar.
+        # Arguments are passed through untouched so that Django decides the
+        # blank choice the same way it does for any other field with choices.
         return [
             (i.value if isinstance(i, Enum) else i, display)
             for (i, display)
-            in super().get_choices(include_blank, blank_choice)
+            in super().get_choices(*args, **kwargs)
         ]
 
     def formfield(self, form_class=None, choices_form_class=None, **kwargs):
